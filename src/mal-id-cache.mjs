@@ -67,7 +67,7 @@ async function main() {
 
     try {
         combinedProducerIds.sort((a, b) => a - b);
-        const output = JSON.stringify({Ids: combinedProducerIds});
+        const output = JSON.stringify({ids: combinedProducerIds});
         await fs.writeFile('producers.json', output, 'utf8');
     } catch (error) {
         console.error(error);
