@@ -1,0 +1,24 @@
+{
+  "name": "mal-id-cache",
+  "version": "1.0.0",
+  "description": "MAL Ids Cache",
+  "homepage": "https://github.com/nakedmcse/mal-id-cache#readme",
+  "bugs": {
+    "url": "https://github.com/nakedmcse/mal-id-cache/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nakedmcse/mal-id-cache.git"
+  },
+  "license": "MIT",
+  "author": "Walker",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "run": "node src/mal-id-cache.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "jsdom": "^27.4.0"
+  }
+}
