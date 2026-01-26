@@ -12,7 +12,6 @@ async function scrapeLinks(target) {
     try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), SCRAPE_TIMEOUT);
-
         const response = await fetch(target, {
             signal: controller.signal,
             headers: {
@@ -22,20 +21,16 @@ async function scrapeLinks(target) {
         });
         clearTimeout(timeout);
 
-        if (!response.ok) {
-            return [];
-        }
+        if (!response.ok) return [];
 
-        const html = await response.text();
-        const dom = new JSDOM(html);
-        const linkElts = dom.window.document.querySelectorAll("a");
+        const dom = new JSDOM(await response.text());
         const links = new Set();
-        for (const link of linkElts) {
-            links.add(link.getAttribute("href"));
-        }
+        dom.window.document.querySelectorAll("a").forEach((el) => {
+            links.add(el.href);
+        })
         return Array.from(links).filter(l => l);
     } catch(error) {
-        console.error("Error scrape links", error);
+        console.error(`Error scraping links for ${target}: ${error}`);
         return [];
     }
 }
@@ -56,23 +51,27 @@ async function getProducerIdsForLetter(letter) {
     return Array.from(new Set(producerIds));
 }
 
+async function saveIds(filename, idList) {
+    try {
+        idList.sort((a, b) => a - b);
+        const output = JSON.stringify({ids: idList});
+        await fs.writeFile(filename, output, 'utf8');
+    } catch(error) {
+        console.error(`Error saving ${filename}: ${error}`);
+    }
+}
+
 async function main() {
     const TargetLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
     let combinedProducerIds = [];
     for (const letter of TargetLetters.split("")) {
         const letterProducerIds = await getProducerIdsForLetter(letter);
         combinedProducerIds = [...combinedProducerIds, ...letterProducerIds];
         console.log(`Read and processed ${letterProducerIds.length} producers from ${letter}`);
     }
-
-    try {
-        combinedProducerIds.sort((a, b) => a - b);
-        const output = JSON.stringify({ids: combinedProducerIds});
-        await fs.writeFile('producers.json', output, 'utf8');
-    } catch (error) {
-        console.error(error);
-    }
-    console.log("Producer IDs written");
+    await saveIds('producers.json',combinedProducerIds);
+    console.log(`Producer IDs written: ${combinedProducerIds.length}`);
 }
 
 main();
