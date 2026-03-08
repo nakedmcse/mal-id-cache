@@ -9,4 +9,6 @@ rpm run run
 ```
 
 ## Using from Repo
-The file `producers.json` contains the IDs and is updated automatically every 7 days.
+The file `producers.json` contains the producer IDs and is updated automatically every 7 days.
+
+The file `anime.json` contains the anime IDs and is updated automatically every 7 days.

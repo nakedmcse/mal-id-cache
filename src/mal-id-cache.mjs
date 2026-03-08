@@ -51,6 +51,22 @@ async function getProducerIdsForLetter(letter) {
     return Array.from(new Set(producerIds));
 }
 
+async function getAnimeIdsForLetter(letter) {
+    let p = 0;
+    let animeIds = [];
+    while (true) {
+        const fullLinks = await scrapeLinks(`https://myanimelist.net/anime.php?letter=${letter}&show=${p*50}`);
+        if (fullLinks.length === 0) break;
+        const pageAnimeIds = fullLinks
+            .filter(link => link.startsWith('https://myanimelist.net/anime'))
+            .map(link => parseInt(link.split('/')[4],10));
+        animeIds = [...animeIds, ...pageAnimeIds.filter(x => x)];
+        p++;
+        await sleep(1000);
+    }
+    return Array.from(new Set(animeIds));
+}
+
 async function saveIds(filename, idList) {
     try {
         idList.sort((a, b) => a - b);
@@ -72,6 +88,16 @@ async function main() {
     }
     await saveIds('producers.json',combinedProducerIds);
     console.log(`Producer IDs written: ${combinedProducerIds.length}`);
+
+    let combinedAnimeIds = [];
+    for (const letter of TargetLetters.split("")) {
+        const letterAnimeIds = await getAnimeIdsForLetter(letter);
+        combinedAnimeIds = [...combinedAnimeIds, ...letterAnimeIds];
+        console.log(`Read and processed ${letterAnimeIds.length} anime from ${letter}`);
+    }
+    combinedAnimeIds = Array.from(new Set(combinedAnimeIds));
+    await saveIds('anime.json',combinedAnimeIds);
+    console.log(`Anime IDs written: ${combinedAnimeIds.length}`);
 }
 
 main();
