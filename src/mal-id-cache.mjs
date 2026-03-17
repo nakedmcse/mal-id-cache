@@ -67,6 +67,22 @@ async function getAnimeIdsForLetter(letter) {
     return Array.from(new Set(animeIds));
 }
 
+async function getCharacterIdsForLetter(letter) {
+    let p = 0;
+    let characterIds = [];
+    while (true) {
+        const fullLinks = await scrapeLinks(`https://myanimelist.net/character.php?letter=${letter}&show=${p*50}`);
+        if (fullLinks.length === 0) break;
+        const pageCharacterIds = fullLinks
+            .filter(link => link.startsWith('https://myanimelist.net/character'))
+            .map(link => parseInt(link.split('/')[4],10));
+        characterIds = [...characterIds, ...pageCharacterIds.filter(x => x)];
+        p++;
+        await sleep(1000);
+    }
+    return Array.from(new Set(characterIds));
+}
+
 async function saveIds(filename, idList) {
     try {
         idList.sort((a, b) => a - b);
@@ -77,20 +93,20 @@ async function saveIds(filename, idList) {
     }
 }
 
-async function main() {
-    const TargetLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
+async function getProducers(targets) {
     let combinedProducerIds = [];
-    for (const letter of TargetLetters.split("")) {
+    for (const letter of targets.split("")) {
         const letterProducerIds = await getProducerIdsForLetter(letter);
         combinedProducerIds = [...combinedProducerIds, ...letterProducerIds];
         console.log(`Read and processed ${letterProducerIds.length} producers from ${letter}`);
     }
     await saveIds('producers.json',combinedProducerIds);
     console.log(`Producer IDs written: ${combinedProducerIds.length}`);
+}
 
+async function getAnime(targets) {
     let combinedAnimeIds = [];
-    for (const letter of TargetLetters.split("")) {
+    for (const letter of targets.split("")) {
         const letterAnimeIds = await getAnimeIdsForLetter(letter);
         combinedAnimeIds = [...combinedAnimeIds, ...letterAnimeIds];
         console.log(`Read and processed ${letterAnimeIds.length} anime from ${letter}`);
@@ -98,6 +114,25 @@ async function main() {
     combinedAnimeIds = Array.from(new Set(combinedAnimeIds));
     await saveIds('anime.json',combinedAnimeIds);
     console.log(`Anime IDs written: ${combinedAnimeIds.length}`);
+}
+
+async function getCharacters(targets) {
+    let combinedCharacterIds = [];
+    for (const letter of targets.split("")) {
+        const letterCharacterIds = await getCharacterIdsForLetter(letter);
+        combinedCharacterIds = [...combinedCharacterIds, ...letterCharacterIds];
+        console.log(`Read and processed ${letterCharacterIds.length} characters from ${letter}`);
+    }
+    combinedCharacterIds = Array.from(new Set(combinedCharacterIds));
+    await saveIds('characters.json',combinedCharacterIds);
+    console.log(`Character IDs written: ${combinedCharacterIds.length}`);
+}
+
+async function main() {
+    const TargetLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    await getProducers(TargetLetters);
+    await getAnime(TargetLetters);
+    await getCharacters(TargetLetters);
 }
 
 main();
