@@ -2,6 +2,7 @@ import { JSDOM } from "jsdom";
 import fs from "fs/promises";
 
 const SCRAPE_TIMEOUT = 15000;
+const SCRAPE_RETRIES = 3;
 const USER_AGENT = "Mozilla/5.0 (compatible; MALList/1.0)";
 
 function sleep(ms) {
@@ -9,30 +10,33 @@ function sleep(ms) {
 }
 
 async function scrapeLinks(target) {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), SCRAPE_TIMEOUT);
-        const response = await fetch(target, {
-            signal: controller.signal,
-            headers: {
-                "User-Agent": USER_AGENT,
-                Accept: "text/html",
-            },
-        });
-        clearTimeout(timeout);
+    let retries = SCRAPE_RETRIES;
+    while (retries-- > 0) {
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), SCRAPE_TIMEOUT);
+            const response = await fetch(target, {
+                signal: controller.signal,
+                headers: {
+                    "User-Agent": USER_AGENT,
+                    Accept: "text/html",
+                },
+            });
+            clearTimeout(timeout);
 
-        if (!response.ok) return [];
+            if (!response.ok) return [];
 
-        const dom = new JSDOM(await response.text());
-        const links = new Set();
-        dom.window.document.querySelectorAll("a").forEach((el) => {
-            links.add(el.href);
-        })
-        return Array.from(links).filter(l => l);
-    } catch(error) {
-        console.error(`Error scraping links for ${target}: ${error}`);
-        return [];
+            const dom = new JSDOM(await response.text());
+            const links = new Set();
+            dom.window.document.querySelectorAll("a").forEach((el) => {
+                links.add(el.href);
+            })
+            return Array.from(links).filter(l => l);
+        } catch(error) {
+            console.error(`Error scraping links for ${target}: ${error}`);
+        }
     }
+    return [];
 }
 
 async function getProducerIdsForLetter(letter) {
